@@ -7,7 +7,7 @@ Calling a Lambda asynchronously from an API Gateway is especially required if th
 - Install and configure the SAM CLI
 - Create an S3 bucket that can store the created stacks
 
-# Creating stack with a synchronous lambda call from event bridge
+# Creating a stack with a synchronous lambda call
 
 ```
 sam package --template-file synchronous_lambda_call.yaml --output-template-file sychronous_pack.yaml --s3-bucket YOUR_S3_BUCKET_NAME
@@ -16,7 +16,7 @@ sam deploy --template-file sychronous_pack.yaml --capabilities CAPABILITY_IAM --
 
 The output at the end tells you which URL you can start in a browers, Postman, Insomnia, etc. to start the Lambda synchronously
 
-# Creating stack with an asynchronous lambda call from event bridge
+# Creating a stack with an asynchronous lambda call
 
 ```
 sam package --template-file asynchronous_lambda_call.yaml --output-template-file asychronous_pack.yaml --s3-bucket YOUR_S3_BUCKET_NAME
