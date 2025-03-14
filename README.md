@@ -27,7 +27,7 @@ The output at the end tells you which URL you can start in a browers, Postman, I
 
 You can then watch the execution of the lambda function in the CloudWatch Logs stream that you find in the log group that corresponds to the Lambda.
 
-# Deletes stack when no used anymore
+# Delete stacks when not used anymore
 
 ```
 aws cloudformation delete-stack --stack-name synchronous-stack
