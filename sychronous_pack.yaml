@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: my_module.lambda_handler_short
+      Runtime: python3.12
+      Architectures:
+      - x86_64
+      CodeUri: s3://glatzkoch-suche-stacks/4db3c6745c267a72e031697b6cf00966
+      MemorySize: 128
+      Timeout: 10
+      Policies:
+      - AWSLambdaBasicExecutionRole
+    Metadata:
+      SamResourceId: MyLambdaFunction
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      DefinitionBody:
+        swagger: '2.0'
+        info:
+          title:
+            Fn::Sub: 'API Gateway: {AWS::StackName}'
+        paths:
+          /invoke:
+            get:
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub:
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+                  - LambdaArn:
+                      Fn::GetAtt:
+                      - MyLambdaFunction
+                      - Arn
+                httpMethod: POST
+                type: aws_proxy
+    Metadata:
+      SamResourceId: MyApi
+  LambdaApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: MyLambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+    Metadata:
+      SamResourceId: LambdaApiPermission
+Outputs:
+  TestFunction:
+    Description: API Gateway endpoint
+    Value:
+      Fn::Sub: https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/invoke/

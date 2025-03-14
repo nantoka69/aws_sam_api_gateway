@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: my_module.lambda_handler_long
+      Runtime: python3.12
+      Architectures:
+      - x86_64
+      CodeUri: s3://glatzkoch-suche-stacks/4db3c6745c267a72e031697b6cf00966
+      MemorySize: 128
+      Timeout: 60
+      Policies:
+      - AWSLambdaBasicExecutionRole
+    Metadata:
+      SamResourceId: MyLambdaFunction
+  MyApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: MyApi
+    Metadata:
+      SamResourceId: MyApi
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId:
+        Fn::GetAtt:
+        - MyApi
+        - RootResourceId
+      PathPart: invoke
+      RestApiId:
+        Ref: MyApi
+    Metadata:
+      SamResourceId: ApiResource
+  ApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      ResourceId:
+        Ref: ApiResource
+      RestApiId:
+        Ref: MyApi
+      Integration:
+        Type: AWS
+        RequestParameters:
+          integration.request.header.X-Amz-Invocation-Type: '''Event'''
+        IntegrationResponses:
+        - StatusCode: '200'
+          ResponseTemplates:
+            application/json: "{\n  \"message\": \"Request accepted and is being processed\
+              \ asynchronously.\"\n}\n"
+        IntegrationHttpMethod: POST
+        Uri:
+          Fn::Sub:
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+          - LambdaArn:
+              Fn::GetAtt:
+              - MyLambdaFunction
+              - Arn
+      MethodResponses:
+      - StatusCode: '200'
+        ResponseModels:
+          application/json: Empty
+    Metadata:
+      SamResourceId: ApiMethod
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: ApiMethod
+    Properties:
+      RestApiId:
+        Ref: MyApi
+      StageName: Prod
+    Metadata:
+      SamResourceId: ApiDeployment
+  LambdaApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Fn::GetAtt:
+        - MyLambdaFunction
+        - Arn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+    Metadata:
+      SamResourceId: LambdaApiPermission
+Outputs:
+  TestFunction:
+    Description: API Gateway endpoint
+    Value:
+      Fn::Sub: https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/invoke/
